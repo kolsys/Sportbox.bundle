@@ -1,0 +1,124 @@
+# -*- coding: utf-8 -*-
+
+# Copyright (c) 2016, KOL
+# All rights reserved.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the <organization> nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTLICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+from urllib import urlencode
+
+PREFIX = '/video/sportbox'
+
+SB_URL = 'http://news.sportbox.ru/'
+SB_LIMIT = 30
+SB_ALL = 7212
+SB_ANNONCE = 12216
+
+RE_VIDEO_ID = Regex('_NI([0-9]+)_')
+
+ICON = 'icon-default.png'
+TITLE = 'Title'
+
+
+def GetRubric(oid, params):
+    aparams = {
+        'id': oid,
+        'limit': SB_LIMIT,
+        'type': 'video',
+        'status': 'archive+live',
+        'sort': 'desc_livefirst',
+    }
+    aparams.update(params)
+
+    rubric = ApiRequest('rubric', aparams)
+
+    if rubric and 'items' in rubric:
+        return rubric
+
+    return None
+
+
+def GetVideoUrl(oid):
+    info = GetVideoInfo(oid)
+    if info and 'playlist' in info and len(info['playlist']):
+        return info['playlist'][0]['uri']
+
+    return None
+
+
+def GetVideoInfo(uri):
+    video_id = GetIdFromUri(uri)
+    return ApiRequest('node', {'id': video_id})
+
+
+def GetIdFromUri(uri):
+    if uri.isdigit():
+        return uri
+
+    id = RE_VIDEO_ID.search(uri)
+    return id.group(1) if id else 0
+
+
+def ApiRequest(method, params={}):
+    params['app'] = 'lg/tv'
+
+    res = JSON.ObjectFromURL(
+        SB_URL + 'api/' + method + '?' + urlencode(params),
+        cacheTime=CACHE_1MINUTE
+    )
+
+    if res and 'id' in res:
+        return res
+
+    return False
+
+
+def GetVideoObject(item):
+
+    url = MetaUrl('%s%s?_NI%d_' % (SB_URL, item['uri'], int(item['id'])))
+    url.update(item)
+
+    return URLService.MetadataObjectForURL(url)
+
+
+def InitMetaUrl(url):
+
+    try:
+        # has attribute crutch
+        if url.item:
+            return url
+    except:
+        url = MetaUrl(url)
+        info = GetVideoInfo(url)
+        if info:
+            url.update(info)
+            return url
+
+    raise Ex.MediaNotAvailable
+
+
+class MetaUrl(str):
+    def update(self, item):
+        self.item = item
+        return self
