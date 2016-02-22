@@ -99,6 +99,8 @@ def Rubric(oid, offset=None, is_announce=None):
         oc.add(DirectoryObject(
             key=Callback(Rubric, oid=oid, is_announce=True),
             title=u'Расписание',
+            summary=u'%s - расписание трансляций' % rubric['name'],
+            thumb=R('schedule.png')
         ))
 
     for video in rubric['items']:
