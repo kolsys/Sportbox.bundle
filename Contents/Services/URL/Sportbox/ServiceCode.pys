@@ -61,7 +61,7 @@ def MetadataObjectForURL(url):
         try:
             summary = u'%s' % HTML.ElementFromString(summary).xpath('//p')[0].text_content()
         except:
-            summary = None
+            summary = ''
 
     if item['start_timestamp'] > time.time():
         title = u'[%s] %s' % (
@@ -74,7 +74,6 @@ def MetadataObjectForURL(url):
         title=title,
         thumb=item['fotos'][0]['foto'] if 'fotos' in item else None,
         summary=summary,
-        tags=[u'%s' % item['mainRubric']['name']],
         originally_available_at=Datetime.FromTimestamp(item['start_timestamp'])
     )
 

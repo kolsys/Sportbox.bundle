@@ -111,7 +111,7 @@ def Rubric(oid, offset=None, is_announce=None):
         return ContentNotFound()
 
     if rubric['count']:
-        offset['count'] = rubric['count']
+        offset['count'] = int(rubric['count'])
 
     offset['page'] = offset['page']+1
 
